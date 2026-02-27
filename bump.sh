@@ -36,9 +36,8 @@ RULE=${RULE:-"========================================"}
 # Usage: set_stamp
 # Returns: 0 on success
 function set_stamp {
-    # Use hostname command as fallback if hostnamectl is not available
     local hostname
-    hostname=$(hostname)
+    hostname=$(cat /proc/sys/kernel/hostname)
     export STAMP="$(date '+%Y%m%dT%H%M%S')-${hostname}"
     return 0
 }

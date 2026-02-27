@@ -60,17 +60,17 @@ confirm() {
     fi
 }
 
+# ─── Prerequisites ─────────────────────────────────────────────────────
+
+log_message "Installing archiso if needed"
+sudo pacman -S --needed --noconfirm archiso
+
 # ─── Validate ───────────────────────────────────────────────────────────
 
 check_dependency git
 check_dependency mkarchiso
 check_dependency dd
 check_exists "$SETUP_REPO/.git"
-
-# ─── Prerequisites ─────────────────────────────────────────────────────
-
-log_message "Installing archiso if needed"
-sudo pacman -S --needed --noconfirm archiso
 
 # ─── Setup ──────────────────────────────────────────────────────────────
 
