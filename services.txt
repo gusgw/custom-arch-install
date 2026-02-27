@@ -1,0 +1,38 @@
+# services.txt — Enabled systemd system services for the HP ZBook Studio 16
+#
+# Based on clovis with ThinkPad-specific services removed:
+#   thermal-tcc.service, thinkfan.service, thinkfan-sleep.service,
+#   thinkfan-wakeup.service, throttled.service, tlp.service
+#
+# Native package services (enabled during install)
+avahi-daemon.service
+avahi-daemon.socket
+bluetooth.service
+cups-browsed.service
+cups.path
+cups.service
+cups.socket
+getty@.service
+iwd.service
+reflector.timer
+remote-fs.target
+rtkit-daemon.service
+systemd-networkd.service
+systemd-networkd.socket
+systemd-networkd-wait-online.service
+systemd-network-generator.service
+systemd-resolved.service
+systemd-timesyncd.service
+systemd-userdbd.socket
+ufw.service
+
+# AUR package services (enable after installing zfs-dkms-staging-git, sanoid)
+# sanoid.timer
+# zfs-import-scan.service
+# zfs-import.target
+# zfs-load-key.service
+# zfs-mount.service
+# zfs.target
+# zfs-volumes.target
+# zfs-volume-wait.service
+# zfs-zed.service

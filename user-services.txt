@@ -1,0 +1,13 @@
+# user-services.txt — Enabled systemd user services
+#
+# Enable after first login:
+#   systemctl --user enable <service>
+#
+battery.timer
+gnome-keyring-daemon.socket
+p11-kit-server.socket
+pipewire-pulse.socket
+pipewire.socket
+podman.socket
+syncthing.service
+wireplumber.service
