@@ -17,10 +17,10 @@ Custom Arch Linux installer for an HP ZBook Studio 16 with LUKS+LVM and ZFS.
 ### 1. Build the ISO (on an existing Arch machine)
 
 ```bash
-./setup/build-iso.sh /dev/sdX
+./build-iso.sh /dev/sdX
 ```
 
-This installs `archiso`, clones this repo into the ISO, writes it to the USB drive, and adds login instructions.
+This installs `archiso`, clones this repo into the ISO at `/root/setup/`, writes it to the USB drive, and adds login instructions.
 
 ### 2. Boot the USB
 

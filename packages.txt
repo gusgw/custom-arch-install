@@ -1,6 +1,6 @@
 # packages.txt — Native packages for the HP ZBook Studio 16
 #
-# Based on clovis (ThinkPad X1 Carbon) with:
+# Based on a ThinkPad X1 Carbon package list with:
 #   Removed: throttled, tlp (ThinkPad-specific / not needed on workstation)
 #   Added:   nvidia-dkms, nvidia-utils, nvidia-prime, cuda, opencl-nvidia,
 #            vulkan-intel, intel-media-driver

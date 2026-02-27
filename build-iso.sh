@@ -2,7 +2,7 @@
 #
 # build-iso.sh — Build custom Arch ISO with installer
 #
-# Run on clovis as a regular user. Uses sudo where needed.
+# Run as a regular user on an existing Arch machine. Uses sudo where needed.
 # Clones the setup repo into the ISO at /root/setup/ so
 # the installer is available at /root/setup/install.sh.
 #
@@ -139,6 +139,6 @@ sudo dd bs=4M if="$ISO_FILE" of="$USB_DEV" status=progress oflag=sync
 log_message "ISO written successfully"
 echo ""
 echo "Done. Remove USB and boot from it."
-echo "The installer is at: /root/setup/setup/install.sh"
+echo "The installer is at: /root/setup/install.sh"
 
 cleanup 0

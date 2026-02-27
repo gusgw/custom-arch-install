@@ -1,6 +1,6 @@
 # services.txt — Enabled systemd system services for the HP ZBook Studio 16
 #
-# Based on clovis with ThinkPad-specific services removed:
+# Based on a ThinkPad X1 Carbon service list with ThinkPad-specific services removed:
 #   thermal-tcc.service, thinkfan.service, thinkfan-sleep.service,
 #   thinkfan-wakeup.service, throttled.service, tlp.service
 #
