@@ -80,12 +80,19 @@ sudo rm -rf "$WORK_DIR" "$BUILD_DIR" "$OUT_DIR"
 log_message "Copying releng profile"
 cp -r /usr/share/archiso/configs/releng/ "$WORK_DIR"
 
+# ─── Add git to ISO packages ─────────────────────────────────────────
+
+log_message "Adding git to ISO package list"
+echo "git" >> "${WORK_DIR}/packages.x86_64"
+
 # ─── Add setup repo to ISO ──────────────────────────────────────────
 
 log_message "Cloning setup repo into ISO airootfs"
 AIROOTFS="${WORK_DIR}/airootfs"
 mkdir -p "${AIROOTFS}/root"
 git clone "$SETUP_REPO" "${AIROOTFS}/root/setup/"
+chmod +x "${AIROOTFS}/root/setup/install.sh"
+chmod +x "${AIROOTFS}/root/setup/build-iso.sh"
 
 REMOTE_URL=$(git -C "$SETUP_REPO" remote get-url origin 2>/dev/null || true)
 if [[ -n "$REMOTE_URL" ]]; then
