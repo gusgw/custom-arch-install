@@ -6,11 +6,11 @@
 # After stage1 completes, place the LUKS keyfile, then run stage2.sh.
 #
 # Required environment variables:
-#   HOSTNAME — the hostname for the new system
-#   USERNAME — the primary user account name
+#   INSTALL_HOST — the hostname for the new system
+#   INSTALL_USER — the primary user account name
 #
 # Example:
-#   HOSTNAME=myhost USERNAME=myuser ./stage1.sh
+#   INSTALL_HOST=myhost INSTALL_USER=myuser ./stage1.sh
 #
 # Partition layout:
 #   nvme0n1p1 — 1M      — BIOS boot (do not touch)
@@ -146,7 +146,7 @@ echo "  chmod 000 /mnt/root/key/internal.key"
 echo ""
 echo "Then run stage 2:"
 echo ""
-echo "  HOSTNAME=${HOSTNAME} USERNAME=${USERNAME} ${SCRIPT_DIR}/stage2.sh"
+echo "  INSTALL_HOST=${INSTALL_HOST} INSTALL_USER=${INSTALL_USER} ${SCRIPT_DIR}/stage2.sh"
 echo ""
 
 cleanup 0

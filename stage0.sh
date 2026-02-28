@@ -10,11 +10,11 @@
 # After stage0, run stage1.sh (which skips LUKS open if already open).
 #
 # Required environment variables:
-#   HOSTNAME — the hostname for the new system
-#   USERNAME — the primary user account name
+#   INSTALL_HOST — the hostname for the new system
+#   INSTALL_USER — the primary user account name
 #
 # Example:
-#   HOSTNAME=myhost USERNAME=myuser ./stage0.sh
+#   INSTALL_HOST=myhost INSTALL_USER=myuser ./stage0.sh
 #
 # Partition layout created:
 #   nvme0n1p1 — 1M      — BIOS boot
@@ -137,7 +137,7 @@ phase 0 "Complete"
 
 echo "Partition layout created. LUKS is open. Now run stage 1:"
 echo ""
-echo "  HOSTNAME=${HOSTNAME} USERNAME=${USERNAME} ${SCRIPT_DIR}/stage1.sh"
+echo "  INSTALL_HOST=${INSTALL_HOST} INSTALL_USER=${INSTALL_USER} ${SCRIPT_DIR}/stage1.sh"
 echo ""
 echo "Note: ${ZFS_PART} is partitioned (type BF00) but not formatted."
 echo "Create the ZFS pool after rebooting:"

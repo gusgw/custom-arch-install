@@ -15,8 +15,13 @@ trap handle_signal SIGINT SIGTERM
 
 # ─── Configuration ─────────────────────────────────────────────────────
 
-not_empty "HOSTNAME environment variable" "${HOSTNAME:-}"
-not_empty "USERNAME environment variable" "${USERNAME:-}"
+not_empty "INSTALL_HOST environment variable" "${INSTALL_HOST:-}"
+not_empty "INSTALL_USER environment variable" "${INSTALL_USER:-}"
+
+if [[ "$INSTALL_USER" == "root" ]]; then
+    log_message "INSTALL_USER cannot be 'root' — set it to the desired user account name"
+    cleanup "$MISSING_INPUT"
+fi
 
 DISK="/dev/nvme0n1"
 EFI_PART="${DISK}p2"
@@ -24,8 +29,8 @@ LUKS_PART="${DISK}p3"
 ZFS_PART="${DISK}p4"
 VG_NAME="internal"
 
-log_setting "Hostname" "$HOSTNAME"
-log_setting "Username" "$USERNAME"
+log_setting "Hostname" "$INSTALL_HOST"
+log_setting "Username" "$INSTALL_USER"
 log_setting "Disk" "$DISK"
 log_setting "EFI partition" "$EFI_PART"
 log_setting "LUKS partition" "$LUKS_PART"

@@ -117,10 +117,12 @@ cat > "${AIROOTFS}/etc/motd" <<'MOTD'
   │    chmod +x /root/setup/stage*.sh                            │
   │                                                              │
   │  Fresh install (blank disk) — run stage0 first:               │
-  │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage0.sh     │
+  │    INSTALL_HOST=<host> INSTALL_USER=<user> \                │
+  │      /root/setup/stage0.sh                                  │
   │                                                              │
   │  Then stage1 (always — or start here for reinstall):         │
-  │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage1.sh     │
+  │    INSTALL_HOST=<host> INSTALL_USER=<user> \                │
+  │      /root/setup/stage1.sh                                  │
   │                                                              │
   │  Then place the LUKS keyfile:                                │
   │    mkdir -p /mnt/root/key                                    │
@@ -128,7 +130,8 @@ cat > "${AIROOTFS}/etc/motd" <<'MOTD'
   │    chmod 000 /mnt/root/key/internal.key                      │
   │                                                              │
   │  Stage 2 — keyfile, chroot config, users:                    │
-  │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage2.sh     │
+  │    INSTALL_HOST=<host> INSTALL_USER=<user> \                │
+  │      /root/setup/stage2.sh                                  │
   │                                                              │
   │  To pull fixes before installing:                            │
   │    cd /root/setup && git pull                                │

@@ -6,11 +6,11 @@
 # LUKS keyfile has been placed at /mnt/root/key/internal.key.
 #
 # Required environment variables:
-#   HOSTNAME — the hostname for the new system
-#   USERNAME — the primary user account name
+#   INSTALL_HOST — the hostname for the new system
+#   INSTALL_USER — the primary user account name
 #
 # Example:
-#   HOSTNAME=myhost USERNAME=myuser ./stage2.sh
+#   INSTALL_HOST=myhost INSTALL_USER=myuser ./stage2.sh
 #
 
 set -euo pipefail
@@ -70,8 +70,8 @@ fi
 phase 6 "System configuration"
 
 cp "${SCRIPT_DIR}/services.txt" /mnt/root/services.txt
-echo "$HOSTNAME" > /mnt/root/hostname.txt
-echo "$USERNAME" > /mnt/root/username.txt
+echo "$INSTALL_HOST" > /mnt/root/hostname.txt
+echo "$INSTALL_USER" > /mnt/root/username.txt
 
 step "Set timezone and hardware clock" \
     "ln -sf /usr/share/zoneinfo/Australia/Sydney /etc/localtime" \
@@ -82,8 +82,8 @@ ln -sf /usr/share/zoneinfo/Australia/Sydney /etc/localtime
 hwclock --systohc
 CHROOT_TZ
 
-step "Set hostname to ${HOSTNAME}" \
-    "echo ${HOSTNAME} > /etc/hostname"
+step "Set hostname to ${INSTALL_HOST}" \
+    "echo ${INSTALL_HOST} > /etc/hostname"
 arch-chroot /mnt /bin/bash <<'CHROOT_HOST'
 set -euo pipefail
 cp /root/hostname.txt /etc/hostname
@@ -135,9 +135,9 @@ grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 CHROOT_GRUB
 
-step "Create user ${USERNAME} and configure sudo" \
-    "groupadd -g 1000 ${USERNAME}" \
-    "useradd -u 1000 -g ${USERNAME} -G wheel,audio,network -s /bin/zsh -m ${USERNAME}" \
+step "Create user ${INSTALL_USER} and configure sudo" \
+    "groupadd -g 1000 ${INSTALL_USER}" \
+    "useradd -u 1000 -g ${INSTALL_USER} -G wheel,audio,network -s /bin/zsh -m ${INSTALL_USER}" \
     "Uncomment %wheel ALL=(ALL:ALL) ALL in /etc/sudoers"
 arch-chroot /mnt /bin/bash <<'CHROOT_USER'
 set -euo pipefail
@@ -187,9 +187,9 @@ log_message "System configuration complete"
 
 phase 7 "Set user password"
 
-step "Set password for ${USERNAME}" \
-    "passwd ${USERNAME}"
-arch-chroot /mnt passwd "$USERNAME"
+step "Set password for ${INSTALL_USER}" \
+    "passwd ${INSTALL_USER}"
+arch-chroot /mnt passwd "$INSTALL_USER"
 
 # ═══════════════════════════════════════════════════════════════════════
 #  Phase 8: Complete
@@ -200,7 +200,7 @@ phase 8 "Complete"
 echo "Installation complete. After rebooting:"
 echo ""
 echo "  1. Remove the USB drive and boot into GRUB → Arch Linux"
-echo "  2. Login as ${USERNAME}"
+echo "  2. Login as ${INSTALL_USER}"
 echo ""
 echo "  3. Clone and set up dotfiles"
 echo ""

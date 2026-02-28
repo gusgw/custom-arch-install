@@ -25,21 +25,21 @@ Boot the target machine from the USB. Connect to the network (e.g. `iwctl`). Ins
 ### 3a. Fresh install (blank disk): stage0 → keyfile → stage2
 
 ```bash
-HOSTNAME=<host> USERNAME=<user> /root/setup/stage0.sh
+INSTALL_HOST=<host> INSTALL_USER=<user> /root/setup/stage0.sh
 ```
 
 Stage 0 will:
 
 1. Partition the disk (GPT: BIOS boot, EFI, LUKS, ZFS)
 2. Create LUKS container and LVM volumes (swap, root, home)
-3. Format all filesystems
-4. Mount and install packages with `pacstrap`
-5. Generate fstab
+3. Format home filesystem
+
+Then run stage1 (stage0 leaves LUKS open for stage1).
 
 ### 3b. Reinstall (preserve /home): stage1 → keyfile → stage2
 
 ```bash
-HOSTNAME=<host> USERNAME=<user> /root/setup/stage1.sh
+INSTALL_HOST=<host> INSTALL_USER=<user> /root/setup/stage1.sh
 ```
 
 Stage 1 will:
@@ -62,7 +62,7 @@ chmod 000 /mnt/root/key/internal.key
 ### 5. Stage 2 — system configuration
 
 ```bash
-HOSTNAME=<host> USERNAME=<user> /root/setup/stage2.sh
+INSTALL_HOST=<host> INSTALL_USER=<user> /root/setup/stage2.sh
 ```
 
 Stage 2 will:
@@ -104,8 +104,8 @@ Stage 2 will:
 
 | Variable | Required | Description |
 |---|---|---|
-| `HOSTNAME` | Yes | Hostname for the new system |
-| `USERNAME` | Yes | Primary user account name (uid/gid 1000) |
+| `INSTALL_HOST` | Yes | Hostname for the new system |
+| `INSTALL_USER` | Yes | Primary user account name (uid/gid 1000) |
 
 ## Partition Layout
 
