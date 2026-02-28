@@ -30,6 +30,14 @@ if [[ ! -f "${SCRIPT_DIR}/aur-packages.txt" ]]; then
     exit 1
 fi
 
+# Remove non-staging ZFS packages that conflict with staging versions
+for pkg in zfs-dkms zfs-utils zfs-dkms-debug zfs-utils-debug; do
+    if pacman -Qq "$pkg" &>/dev/null; then
+        echo "Removing conflicting package: $pkg"
+        sudo pacman -Rdd --noconfirm "$pkg"
+    fi
+done
+
 # shellcheck disable=SC2046 — word splitting is intentional, yay needs separate args
 AUR_PKGS=$(grep -v '^#' "${SCRIPT_DIR}/aur-packages.txt" | grep -v '^$' | tr '\n' ' ')
 

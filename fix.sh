@@ -171,8 +171,15 @@ fi
 
 # ─── Install ZFS ─────────────────────────────────────────────────────
 
-echo "Installing ZFS and sanoid..."
-yay -S --needed zfs-dkms zfs-utils sanoid
+echo "Removing non-staging ZFS packages if present..."
+for pkg in zfs-dkms zfs-utils zfs-dkms-debug zfs-utils-debug; do
+    if pacman -Qq "$pkg" &>/dev/null; then
+        sudo pacman -Rdd --noconfirm "$pkg"
+    fi
+done
+
+echo "Installing ZFS (staging) and sanoid..."
+yay -S --needed zfs-dkms-staging-git zfs-utils-staging-git sanoid
 
 echo "Loading ZFS module..."
 sudo modprobe zfs
