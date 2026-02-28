@@ -131,6 +131,19 @@ for i in $(seq 1 30); do
     sleep 1
 done
 
+# ─── Add Sublime Text repo to installed system ───────────────────────
+
+if ! grep -q '\[sublime-text\]' /etc/pacman.conf; then
+    echo "Adding Sublime Text repository..."
+    curl -O https://download.sublimetext.com/sublimehq-pub.gpg
+    sudo pacman-key --add sublimehq-pub.gpg
+    sudo pacman-key --lsign-key 8A8F901A
+    rm -f sublimehq-pub.gpg
+    echo -e '\n[sublime-text]\nServer = https://download.sublimetext.com/arch/stable/x86_64' | sudo tee -a /etc/pacman.conf > /dev/null
+else
+    echo "Sublime Text repository already configured"
+fi
+
 # ─── Install yay ─────────────────────────────────────────────────────
 
 if ! command -v yay &>/dev/null; then

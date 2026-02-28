@@ -226,6 +226,18 @@ rm -f /etc/resolv.conf
 ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 CHROOT_NET
 
+step "Add Sublime Text repository to installed system" \
+    "curl sublimehq-pub.gpg → pacman-key --add / --lsign-key 8A8F901A" \
+    "Add [sublime-text] repo to /etc/pacman.conf"
+arch-chroot /mnt /bin/bash <<'CHROOT_SUBLIME'
+set -euo pipefail
+curl -O https://download.sublimetext.com/sublimehq-pub.gpg
+pacman-key --add sublimehq-pub.gpg
+pacman-key --lsign-key 8A8F901A
+rm -f sublimehq-pub.gpg
+echo -e '\n[sublime-text]\nServer = https://download.sublimetext.com/arch/stable/x86_64' >> /etc/pacman.conf
+CHROOT_SUBLIME
+
 step "Configure NVIDIA and CPU governor" \
     "nvidia: NVreg_DynamicPowerManagement=0x00 → /etc/modprobe.d/nvidia.conf" \
     "cpu: scaling_governor=performance → /etc/tmpfiles.d/cpu-governor.conf"
