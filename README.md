@@ -7,9 +7,9 @@ Custom Arch Linux installer for an HP ZBook Studio 16 with LUKS+LVM and ZFS.
 - An existing GPT partition table on `/dev/nvme0n1` with:
   - `p1` — 1M BIOS boot (untouched)
   - `p2` — 512M EFI System (reformatted)
-  - `p3` — ~153G LUKS → LVM (reformatted)
+  - `p3` — ~153G LUKS → LVM (opened, not reformatted)
   - `p4` — ZFS (untouched)
-- A LUKS keyfile on separate media
+- The existing LUKS keyfile on separate media
 - A USB drive for the live ISO
 
 ## Quick Start
@@ -26,24 +26,50 @@ This installs `archiso`, clones this repo into the ISO at `/root/setup/`, writes
 
 Boot the target machine from the USB. Instructions are displayed on login.
 
-### 3. Run the installer
+### 3. Stage 1 — format, mount, pacstrap
 
 ```bash
-HOSTNAME=<hostname> USERNAME=<user> /root/setup/install.sh
+HOSTNAME=<hostname> USERNAME=<user> /root/setup/stage1.sh
 ```
 
-The installer will:
+Stage 1 will:
 
 1. Validate the environment (root, live USB, dependencies)
-2. Format EFI and set up LUKS + LVM (swap, root, home)
-3. Install packages with `pacstrap`
-4. Pause for LUKS keyfile placement at `/mnt/root/key/internal.key`
-5. Configure timezone, locale, mkinitcpio, GRUB
-6. Create the user account (uid/gid 1000, wheel group)
-7. Configure NVIDIA + Intel hybrid graphics
-8. Enable system services
+2. Format EFI, open existing LUKS, reformat swap and root (home is preserved)
+3. Mount filesystems
+4. Add the Sublime Text repository and GPG key
+5. Install packages with `pacstrap`
+6. Generate fstab
 
-### 4. After reboot
+### 4. Place the LUKS keyfile
+
+After stage 1 completes, the filesystems remain mounted. Place the keyfile:
+
+```bash
+mkdir -p /mnt/root/key
+cp /path/to/your/keyfile /mnt/root/key/internal.key
+chmod 000 /mnt/root/key/internal.key
+```
+
+### 5. Stage 2 — system configuration
+
+```bash
+HOSTNAME=<hostname> USERNAME=<user> /root/setup/stage2.sh
+```
+
+Stage 2 will:
+
+1. Verify stage 1 state (mounts, keyfile)
+2. Optionally add keyfile to LUKS (skip if already registered)
+3. Configure timezone, locale, hostname
+4. Configure mkinitcpio with encrypt + lvm2 hooks
+5. Install and configure GRUB with LUKS support
+6. Create the user account (uid/gid 1000, wheel group)
+7. Configure NVIDIA + Intel hybrid graphics and CPU governor
+8. Enable system services
+9. Set user password
+
+### 6. After reboot
 
 - Clone your dotfiles and symlink configs
 - Enable user services listed in `user-services.txt`
@@ -55,7 +81,9 @@ The installer will:
 
 | File | Purpose |
 |---|---|
-| `install.sh` | Main installer script |
+| `stage1.sh` | Stage 1: format, mount, pacstrap |
+| `stage2.sh` | Stage 2: keyfile, chroot config, users |
+| `common.sh` | Shared configuration and helpers |
 | `build-iso.sh` | Builds custom Arch ISO and writes to USB |
 | `packages.txt` | Native packages to install |
 | `services.txt` | System services to enable |
@@ -72,15 +100,15 @@ The installer will:
 
 ## Partition Layout
 
-The installer preserves the existing GPT table. It reformats `p2` (EFI) and `p3` (LUKS), and does not touch `p1` or `p4`.
+The installer preserves the existing GPT table and LUKS container. It opens LUKS, reformats swap and root, and preserves home.
 
-LVM volumes created inside LUKS:
+LVM volumes inside LUKS (already exist, not recreated):
 
-| Volume | Size | Filesystem | Mount |
+| Volume | Size | Filesystem | Action |
 |---|---|---|---|
-| `internal-swap` | 32G | swap | swap |
-| `internal-root` | 100G | ext4 | `/` |
-| `internal-home` | remainder | ext4 | `/home` |
+| `internal-swap` | 32G | swap | reformatted |
+| `internal-root` | 100G | ext4 | reformatted |
+| `internal-home` | remainder | ext4 | **preserved** |
 
 ## Graphics
 

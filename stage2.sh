@@ -1,236 +1,73 @@
 #!/bin/bash
 #
-# install.sh — Arch Linux installer for the HP ZBook Studio 16
+# stage2.sh — Configure system after keyfile placement
 #
-# Run as root from a live USB booted with the custom archiso.
+# Run as root from a live USB after stage1.sh has completed and the
+# LUKS keyfile has been placed at /mnt/root/key/internal.key.
 #
 # Required environment variables:
 #   HOSTNAME — the hostname for the new system
 #   USERNAME — the primary user account name
 #
 # Example:
-#   HOSTNAME=myhost USERNAME=myuser ./install.sh
-#
-# Partition layout:
-#   nvme0n1p1 — 1M      — BIOS boot (do not touch)
-#   nvme0n1p2 — 512M    — EFI System (reformatted)
-#   nvme0n1p3 — 153.3G  — LUKS → LVM "internal" (opened, not reformatted)
-#     swap    — 32G     — reformatted
-#     root    — 100G    — reformatted
-#     home    — ~21G    — PRESERVED
-#   nvme0n1p4 — 800G    — ZFS (DO NOT TOUCH)
+#   HOSTNAME=myhost USERNAME=myuser ./stage2.sh
 #
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# ─── BUMP library ──────────────────────────────────────────────────────
-
 # shellcheck disable=SC1091
-. "${SCRIPT_DIR}/bump.sh"
-
-set_stamp
-trap handle_signal SIGINT SIGTERM
-trap 'rc=$?; [[ $rc -ne 0 ]] && cleanup_mounts "$rc"; exit $rc' EXIT
-
-# ─── Configuration ─────────────────────────────────────────────────────
-
-not_empty "HOSTNAME environment variable" "${HOSTNAME:-}"
-not_empty "USERNAME environment variable" "${USERNAME:-}"
-
-DISK="/dev/nvme0n1"
-EFI_PART="${DISK}p2"
-LUKS_PART="${DISK}p3"
-ZFS_PART="${DISK}p4"
-VG_NAME="internal"
-
-log_setting "Hostname" "$HOSTNAME"
-log_setting "Username" "$USERNAME"
-log_setting "Disk" "$DISK"
-log_setting "EFI partition" "$EFI_PART"
-log_setting "LUKS partition" "$LUKS_PART"
-log_setting "ZFS partition (DO NOT TOUCH)" "$ZFS_PART"
-log_setting "LVM volume group" "$VG_NAME"
-
-# ─── Cleanup handler ───────────────────────────────────────────────────
-
-function cleanup_mounts {
-    local rc="$1"
-    if [[ $rc -ne 0 ]]; then
-        log_message "Cleaning up mounts and LUKS..."
-        swapoff "/dev/${VG_NAME}/swap" 2>/dev/null || true
-        umount -R /mnt 2>/dev/null || true
-        vgchange -an "$VG_NAME" 2>/dev/null || true
-        cryptsetup close "$VG_NAME" 2>/dev/null || true
-    fi
-}
-cleanup_functions+=(cleanup_mounts)
-
-# ─── Helpers ────────────────────────────────────────────────────────────
-
-confirm() {
-    local prompt="${1:-Continue?}"
-    local response=""
-    read -r -p "${prompt} [y/N] " response || true
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        log_message "User aborted at: ${prompt}"
-        cleanup "$UNSAFE"
-    fi
-}
-
-step() {
-    local description="$1"
-    shift
-    echo ""
-    log_message "$description"
-    for cmd in "$@"; do
-        echo "  → $cmd"
-    done
-    echo ""
-    confirm "Execute?"
-}
-
-phase() {
-    echo ""
-    print_rule
-    log_message "Phase $1: $2"
-    echo "  Phase $1: $2"
-    print_rule
-    echo ""
-}
+. "${SCRIPT_DIR}/common.sh"
 
 # ═══════════════════════════════════════════════════════════════════════
-#  Phase 1: Validate environment
+#  Validate stage 1 completed
 # ═══════════════════════════════════════════════════════════════════════
 
-phase 1 "Validate environment"
+phase 4 "Validate stage 1"
 
-if [[ $EUID -ne 0 ]]; then
-    log_message "Must run as root"
-    cleanup "$SECURITY_FAILURE"
-fi
+validate_live_usb
 
-if [[ ! -d /run/archiso ]]; then
-    log_message "Not running from a live USB (no /run/archiso)"
-    cleanup "$UNSAFE"
-fi
+check_dependency arch-chroot
+check_dependency blkid
 
-for cmd in cryptsetup mkfs.fat pacstrap genfstab arch-chroot fdisk blkid curl; do
-    check_dependency "$cmd"
+# Verify mounts from stage 1
+for mp in /mnt /mnt/efi /mnt/home; do
+    if ! mountpoint -q "$mp"; then
+        log_message "${mp} is not mounted — run stage1.sh first"
+        cleanup "$MISSING_INPUT"
+    fi
 done
 
-check_exists "${SCRIPT_DIR}/packages.txt"
 check_exists "${SCRIPT_DIR}/services.txt"
 check_exists "${SCRIPT_DIR}/user-services.txt"
-
-echo "Partition table:"
-fdisk -l "$DISK"
-echo ""
-log_message "${ZFS_PART} (ZFS) will NOT be touched"
-log_message "/dev/${VG_NAME}/home will be PRESERVED"
-echo ""
-echo "The following will be ERASED:"
-echo "  ${EFI_PART}       — EFI System (reformatted as FAT32)"
-echo "  ${VG_NAME}/swap   — swap (reformatted)"
-echo "  ${VG_NAME}/root   — root (reformatted as ext4)"
-echo ""
-echo "The following will be PRESERVED:"
-echo "  ${LUKS_PART}      — LUKS container (opened, not reformatted)"
-echo "  ${VG_NAME}/home   — home (mounted as-is)"
-echo "  ${ZFS_PART}       — ZFS (not touched)"
-echo ""
-confirm "Proceed with installation?"
-
-# ═══════════════════════════════════════════════════════════════════════
-#  Phase 2: Format EFI, open LUKS, reformat swap + root
-# ═══════════════════════════════════════════════════════════════════════
-
-phase 2 "Format EFI, open LUKS, reformat swap + root"
-
-step "Format EFI partition" \
-    "mkfs.fat -F32 ${EFI_PART}"
-mkfs.fat -F32 "$EFI_PART"
-
-step "Open existing LUKS container (enter passphrase)" \
-    "cryptsetup open ${LUKS_PART} ${VG_NAME}"
-cryptsetup open "$LUKS_PART" "$VG_NAME"
-
-step "Reformat swap" \
-    "mkswap /dev/${VG_NAME}/swap"
-mkswap "/dev/${VG_NAME}/swap"
-
-step "Reformat root filesystem" \
-    "mkfs.ext4 /dev/${VG_NAME}/root"
-mkfs.ext4 "/dev/${VG_NAME}/root"
-
-# ═══════════════════════════════════════════════════════════════════════
-#  Phase 3: Mount and install
-# ═══════════════════════════════════════════════════════════════════════
-
-phase 3 "Mount and install"
-
-step "Mount filesystems" \
-    "mount /dev/${VG_NAME}/root /mnt" \
-    "mount ${EFI_PART} /mnt/efi" \
-    "mount /dev/${VG_NAME}/home /mnt/home  (existing, preserved)" \
-    "swapon /dev/${VG_NAME}/swap"
-mount "/dev/${VG_NAME}/root" /mnt
-mkdir -p /mnt/efi /mnt/home
-mount "$EFI_PART" /mnt/efi
-mount "/dev/${VG_NAME}/home" /mnt/home
-swapon "/dev/${VG_NAME}/swap"
-
-step "Add Sublime Text repository and GPG key" \
-    "pacman-key: import sublimehq-pub.gpg (key 8A8F901A)" \
-    "Add [sublime-text] repo to /etc/pacman.conf" \
-    "pacman -Sy"
-curl -O https://download.sublimetext.com/sublimehq-pub.gpg
-pacman-key --add sublimehq-pub.gpg
-pacman-key --lsign-key 8A8F901A
-rm -f sublimehq-pub.gpg
-echo -e '\n[sublime-text]\nServer = https://download.sublimetext.com/arch/stable/x86_64' >> /etc/pacman.conf
-pacman -Sy
-
-step "Install packages with pacstrap" \
-    "pacstrap -K /mnt <packages from packages.txt>"
-# shellcheck disable=SC2046 — word splitting is intentional, pacstrap needs separate args
-pacstrap -K /mnt $(grep -v '^#' "${SCRIPT_DIR}/packages.txt" | grep -v '^$')
-
-step "Generate fstab" \
-    "genfstab -U /mnt >> /mnt/etc/fstab"
-genfstab -U /mnt >> /mnt/etc/fstab
-
-# ═══════════════════════════════════════════════════════════════════════
-#  Phase 4: LUKS keyfile
-# ═══════════════════════════════════════════════════════════════════════
-
-phase 4 "LUKS keyfile"
-
-log_message "Keyfile placement required"
-echo ""
-echo "The LUKS keyfile must be placed manually before continuing."
-echo ""
-echo "  1. Mount a USB or copy the keyfile to the live environment"
-echo "  2. Place it at: /mnt/root/key/internal.key"
-echo ""
-echo "     mkdir -p /mnt/root/key"
-echo "     cp /path/to/your/keyfile /mnt/root/key/internal.key"
-echo "     chmod 000 /mnt/root/key/internal.key"
-echo ""
-confirm "Have you placed the keyfile at /mnt/root/key/internal.key?"
-
 check_exists /mnt/root/key/internal.key
 
-step "Add keyfile to LUKS" \
-    "cryptsetup luksAddKey ${LUKS_PART} /mnt/root/key/internal.key"
-cryptsetup luksAddKey "$LUKS_PART" /mnt/root/key/internal.key
+log_message "Stage 1 state verified"
 
 # ═══════════════════════════════════════════════════════════════════════
-#  Phase 5: System configuration (chroot)
+#  Phase 5: LUKS keyfile
 # ═══════════════════════════════════════════════════════════════════════
 
-phase 5 "System configuration"
+phase 5 "LUKS keyfile"
+
+echo "If the keyfile is already registered with LUKS (e.g. from a"
+echo "previous install), you can skip this step."
+echo ""
+echo "  → cryptsetup luksAddKey ${LUKS_PART} /mnt/root/key/internal.key"
+echo ""
+read -r -p "Add keyfile to LUKS? [y/N] " response || true
+if [[ "$response" =~ ^[Yy]$ ]]; then
+    cryptsetup luksAddKey "$LUKS_PART" /mnt/root/key/internal.key
+else
+    log_message "Skipped luksAddKey (keyfile assumed already registered)"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Phase 6: System configuration (chroot)
+# ═══════════════════════════════════════════════════════════════════════
+
+phase 6 "System configuration"
 
 cp "${SCRIPT_DIR}/services.txt" /mnt/root/services.txt
 echo "$HOSTNAME" > /mnt/root/hostname.txt
@@ -345,20 +182,20 @@ CHROOT_SVC
 log_message "System configuration complete"
 
 # ═══════════════════════════════════════════════════════════════════════
-#  Phase 6: Set user password
+#  Phase 7: Set user password
 # ═══════════════════════════════════════════════════════════════════════
 
-phase 6 "Set user password"
+phase 7 "Set user password"
 
 step "Set password for ${USERNAME}" \
     "passwd ${USERNAME}"
 arch-chroot /mnt passwd "$USERNAME"
 
 # ═══════════════════════════════════════════════════════════════════════
-#  Phase 7: Complete
+#  Phase 8: Complete
 # ═══════════════════════════════════════════════════════════════════════
 
-phase 7 "Complete"
+phase 8 "Complete"
 
 echo "Installation complete. After rebooting:"
 echo ""

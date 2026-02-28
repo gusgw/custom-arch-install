@@ -4,7 +4,7 @@
 #
 # Run as a regular user on an existing Arch machine. Uses sudo where needed.
 # Clones the setup repo into the ISO at /root/setup/ so
-# the installer is available at /root/setup/install.sh.
+# the installer is available at /root/setup/stage1.sh and stage2.sh.
 #
 # Usage:
 #   ./build-iso.sh              # writes to /dev/sda
@@ -91,7 +91,8 @@ log_message "Cloning setup repo into ISO airootfs"
 AIROOTFS="${WORK_DIR}/airootfs"
 mkdir -p "${AIROOTFS}/root"
 git clone "$SETUP_REPO" "${AIROOTFS}/root/setup/"
-chmod +x "${AIROOTFS}/root/setup/install.sh"
+chmod +x "${AIROOTFS}/root/setup/stage1.sh"
+chmod +x "${AIROOTFS}/root/setup/stage2.sh"
 chmod +x "${AIROOTFS}/root/setup/build-iso.sh"
 
 REMOTE_URL=$(git -C "$SETUP_REPO" remote get-url origin 2>/dev/null || true)
@@ -109,8 +110,16 @@ cat > "${AIROOTFS}/etc/motd" <<'MOTD'
   ┌──────────────────────────────────────────────────────────────┐
   │  Arch Linux Installer                                        │
   │                                                              │
-  │  Run the installer:                                          │
-  │    HOSTNAME=<host> USERNAME=<user> /root/setup/install.sh    │
+  │  Stage 1 — format, mount, pacstrap:                          │
+  │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage1.sh     │
+  │                                                              │
+  │  Then place the LUKS keyfile:                                │
+  │    mkdir -p /mnt/root/key                                    │
+  │    cp /path/to/keyfile /mnt/root/key/internal.key            │
+  │    chmod 000 /mnt/root/key/internal.key                      │
+  │                                                              │
+  │  Stage 2 — keyfile, chroot config, users:                    │
+  │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage2.sh     │
   │                                                              │
   │  To pull fixes before installing:                            │
   │    cd /root/setup && git pull                                │
@@ -146,6 +155,6 @@ sudo dd bs=4M if="$ISO_FILE" of="$USB_DEV" status=progress oflag=sync
 log_message "ISO written successfully"
 echo ""
 echo "Done. Remove USB and boot from it."
-echo "The installer is at: /root/setup/install.sh"
+echo "The installer is at: /root/setup/stage1.sh"
 
 cleanup 0
