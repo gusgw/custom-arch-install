@@ -94,6 +94,7 @@ git clone "$SETUP_REPO" "${AIROOTFS}/root/setup/"
 chmod +x "${AIROOTFS}/root/setup/stage0.sh"
 chmod +x "${AIROOTFS}/root/setup/stage1.sh"
 chmod +x "${AIROOTFS}/root/setup/stage2.sh"
+chmod +x "${AIROOTFS}/root/setup/stage3.sh"
 chmod +x "${AIROOTFS}/root/setup/build-iso.sh"
 
 REMOTE_URL=$(git -C "$SETUP_REPO" remote get-url origin 2>/dev/null || true)

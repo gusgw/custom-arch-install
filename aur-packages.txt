@@ -1,0 +1,7 @@
+# aur-packages.txt — AUR packages to install after first boot
+#
+# Installed via yay in stage3.sh
+#
+zfs-dkms
+zfs-utils
+sanoid

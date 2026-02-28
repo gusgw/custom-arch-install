@@ -77,24 +77,40 @@ Stage 2 will:
 8. Enable system services
 9. Set user password
 
-### 6. After reboot
+### 6. Stage 3 — post-reboot setup
 
+After rebooting, clone the repo and run stage3 as the primary user (not root):
+
+```bash
+git clone <repo-url> ~/setup
+cd ~/setup && ./stage3.sh
+```
+
+Stage 3 will:
+
+1. Install yay (AUR helper)
+2. Install AUR packages from `aur-packages.txt` (ZFS, sanoid)
+3. Enable ZFS and AUR-dependent system services
+4. Enable user services from `user-services.txt`
+
+### 7. After stage 3
+
+- Import or create ZFS pool: `sudo modprobe zfs && sudo zpool import <poolname>`
 - Clone your dotfiles and symlink configs
-- Enable user services listed in `user-services.txt`
-- Import or create ZFS pool on `/dev/nvme0n1p4`
-- Install AUR helper and AUR packages (`zfs-dkms-staging-git`, `sanoid`, etc.)
 - Set up network configs (iwd, systemd-networkd, systemd-resolved)
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `stage0.sh` | Fresh install: partition, LUKS, LVM, format, pacstrap |
+| `stage0.sh` | Fresh install: partition, LUKS, LVM, format |
 | `stage1.sh` | Reinstall: open existing LUKS, reformat swap+root, pacstrap |
 | `stage2.sh` | Both paths: keyfile, chroot config, users, services |
+| `stage3.sh` | Post-reboot: AUR helper, ZFS, user services |
 | `common.sh` | Shared configuration and helpers |
 | `build-iso.sh` | Builds custom Arch ISO and writes to USB |
 | `packages.txt` | Native packages to install |
+| `aur-packages.txt` | AUR packages to install post-reboot |
 | `services.txt` | System services to enable |
 | `user-services.txt` | User services to enable after first login |
 | `bump.sh` | [BUMP](https://github.com/gusgw/bump) library for error handling |
