@@ -116,7 +116,7 @@ if [[ ! -d /run/archiso ]]; then
     cleanup "$UNSAFE"
 fi
 
-for cmd in cryptsetup mkfs.fat pacstrap genfstab arch-chroot fdisk blkid; do
+for cmd in cryptsetup mkfs.fat pacstrap genfstab arch-chroot fdisk blkid curl; do
     check_dependency "$cmd"
 done
 
@@ -180,6 +180,17 @@ mkdir -p /mnt/efi /mnt/home
 mount "$EFI_PART" /mnt/efi
 mount "/dev/${VG_NAME}/home" /mnt/home
 swapon "/dev/${VG_NAME}/swap"
+
+step "Add Sublime Text repository and GPG key" \
+    "pacman-key: import sublimehq-pub.gpg (key 8A8F901A)" \
+    "Add [sublime-text] repo to /etc/pacman.conf" \
+    "pacman -Sy"
+curl -O https://download.sublimetext.com/sublimehq-pub.gpg
+pacman-key --add sublimehq-pub.gpg
+pacman-key --lsign-key 8A8F901A
+rm -f sublimehq-pub.gpg
+echo -e '\n[sublime-text]\nServer = https://download.sublimetext.com/arch/stable/x86_64' >> /etc/pacman.conf
+pacman -Sy
 
 step "Install packages with pacstrap" \
     "pacstrap -K /mnt <packages from packages.txt>"
