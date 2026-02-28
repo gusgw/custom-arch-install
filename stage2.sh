@@ -124,7 +124,7 @@ set -euo pipefail
 sed -i 's/^#GRUB_ENABLE_CRYPTODISK=y/GRUB_ENABLE_CRYPTODISK=y/' /etc/default/grub
 
 LUKS_UUID=$(blkid -s UUID -o value /dev/nvme0n1p3)
-sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${LUKS_UUID}:internal cryptkey=rootfs:/root/key/internal.key nvidia-drm.modeset=1\"|" /etc/default/grub
+sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${LUKS_UUID}:internal cryptkey=rootfs:/root/key/internal.key\"|" /etc/default/grub
 
 sed -i 's|^GRUB_DEFAULT=.*|GRUB_DEFAULT=0|' /etc/default/grub
 sed -i 's|^GRUB_TIMEOUT=.*|GRUB_TIMEOUT=5|' /etc/default/grub

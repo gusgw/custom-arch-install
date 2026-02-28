@@ -144,6 +144,12 @@ else
     echo "Sublime Text repository already configured"
 fi
 
+# ─── Fix GRUB: remove nvidia-drm.modeset (not needed for compute-only) ─
+
+echo "Removing nvidia-drm.modeset=1 from GRUB cmdline..."
+sudo sed -i 's| nvidia-drm.modeset=1||' /etc/default/grub
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+
 # ─── Configure sway to use Intel GPU only ─────────────────────────────
 
 echo "Configuring sway to use Intel GPU (NVIDIA for compute only)..."
