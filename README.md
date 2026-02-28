@@ -4,12 +4,8 @@ Custom Arch Linux installer for an HP ZBook Studio 16 with LUKS+LVM and ZFS.
 
 ## Requirements
 
-- An existing GPT partition table on `/dev/nvme0n1` with:
-  - `p1` — 1M BIOS boot (untouched)
-  - `p2` — 512M EFI System (reformatted)
-  - `p3` — ~153G LUKS → LVM (opened, not reformatted)
-  - `p4` — ZFS (untouched)
-- The existing LUKS keyfile on separate media
+- An NVMe drive (1TB+ for fresh install, existing layout for reinstall)
+- A LUKS keyfile on separate media
 - A USB drive for the live ISO
 
 ## Quick Start
@@ -24,26 +20,38 @@ This installs `archiso`, clones this repo into the ISO at `/root/setup/`, writes
 
 ### 2. Boot the USB
 
-Boot the target machine from the USB. Instructions are displayed on login.
+Boot the target machine from the USB. Connect to the network (e.g. `iwctl`). Instructions are displayed on login.
 
-### 3. Stage 1 — format, mount, pacstrap
+### 3a. Fresh install (blank disk): stage0 → keyfile → stage2
 
 ```bash
-HOSTNAME=<hostname> USERNAME=<user> /root/setup/stage1.sh
+HOSTNAME=<host> USERNAME=<user> /root/setup/stage0.sh
+```
+
+Stage 0 will:
+
+1. Partition the disk (GPT: BIOS boot, EFI, LUKS, ZFS)
+2. Create LUKS container and LVM volumes (swap, root, home)
+3. Format all filesystems
+4. Mount and install packages with `pacstrap`
+5. Generate fstab
+
+### 3b. Reinstall (preserve /home): stage1 → keyfile → stage2
+
+```bash
+HOSTNAME=<host> USERNAME=<user> /root/setup/stage1.sh
 ```
 
 Stage 1 will:
 
-1. Validate the environment (root, live USB, dependencies)
-2. Format EFI, open existing LUKS, reformat swap and root (home is preserved)
-3. Mount filesystems
-4. Add the Sublime Text repository and GPG key
-5. Install packages with `pacstrap`
-6. Generate fstab
+1. Format EFI, open existing LUKS, reformat swap and root (home preserved)
+2. Mount filesystems
+3. Install packages with `pacstrap`
+4. Generate fstab
 
 ### 4. Place the LUKS keyfile
 
-After stage 1 completes, the filesystems remain mounted. Place the keyfile:
+After stage 0 or 1 completes, the filesystems remain mounted. Place the keyfile:
 
 ```bash
 mkdir -p /mnt/root/key
@@ -54,12 +62,12 @@ chmod 000 /mnt/root/key/internal.key
 ### 5. Stage 2 — system configuration
 
 ```bash
-HOSTNAME=<hostname> USERNAME=<user> /root/setup/stage2.sh
+HOSTNAME=<host> USERNAME=<user> /root/setup/stage2.sh
 ```
 
 Stage 2 will:
 
-1. Verify stage 1 state (mounts, keyfile)
+1. Verify mounts and keyfile
 2. Optionally add keyfile to LUKS (skip if already registered)
 3. Configure timezone, locale, hostname
 4. Configure mkinitcpio with encrypt + lvm2 hooks
@@ -73,7 +81,7 @@ Stage 2 will:
 
 - Clone your dotfiles and symlink configs
 - Enable user services listed in `user-services.txt`
-- Import ZFS pool: `sudo zpool import <pool>`
+- Import or create ZFS pool on `/dev/nvme0n1p4`
 - Install AUR helper and AUR packages (`zfs-dkms-staging-git`, `sanoid`, etc.)
 - Set up network configs (iwd, systemd-networkd, systemd-resolved)
 
@@ -81,8 +89,9 @@ Stage 2 will:
 
 | File | Purpose |
 |---|---|
-| `stage1.sh` | Stage 1: format, mount, pacstrap |
-| `stage2.sh` | Stage 2: keyfile, chroot config, users |
+| `stage0.sh` | Fresh install: partition, LUKS, LVM, format, pacstrap |
+| `stage1.sh` | Reinstall: open existing LUKS, reformat swap+root, pacstrap |
+| `stage2.sh` | Both paths: keyfile, chroot config, users, services |
 | `common.sh` | Shared configuration and helpers |
 | `build-iso.sh` | Builds custom Arch ISO and writes to USB |
 | `packages.txt` | Native packages to install |
@@ -100,15 +109,20 @@ Stage 2 will:
 
 ## Partition Layout
 
-The installer preserves the existing GPT table and LUKS container. It opens LUKS, reformats swap and root, and preserves home.
-
-LVM volumes inside LUKS (already exist, not recreated):
-
-| Volume | Size | Filesystem | Action |
+| Partition | Size | Type | Purpose |
 |---|---|---|---|
-| `internal-swap` | 32G | swap | reformatted |
-| `internal-root` | 100G | ext4 | reformatted |
-| `internal-home` | remainder | ext4 | **preserved** |
+| `nvme0n1p1` | 1M | EF02 | BIOS boot |
+| `nvme0n1p2` | 512M | EF00 | EFI System |
+| `nvme0n1p3` | 153G | 8300 | LUKS → LVM |
+| `nvme0n1p4` | remainder | BF00 | ZFS |
+
+LVM volumes inside LUKS:
+
+| Volume | Size | Filesystem |
+|---|---|---|
+| `internal-swap` | 32G | swap |
+| `internal-root` | 100G | ext4 |
+| `internal-home` | remainder | ext4 |
 
 ## Graphics
 
