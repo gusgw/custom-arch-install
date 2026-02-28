@@ -35,6 +35,9 @@ fi
 
 echo "Configuring network..."
 
+# Bootstrap DNS immediately so subsequent steps can resolve hosts
+echo 'nameserver 9.9.9.9' | sudo tee /etc/resolv.conf > /dev/null
+
 # iwd: delegate IP config to systemd-networkd
 sudo mkdir -p /etc/iwd
 sudo tee /etc/iwd/main.conf > /dev/null <<'EOF'
@@ -104,14 +107,29 @@ LLMNR=no
 DNSStubListenerExtra=[::1]:53
 EOF
 
-# resolv.conf symlink
-sudo rm -f /etc/resolv.conf
-sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-
 echo "Restarting network services..."
 sudo systemctl restart systemd-resolved
 sudo systemctl restart systemd-networkd
 sudo systemctl restart iwd
+
+# Switch to resolved stub now that systemd-resolved is running
+sudo rm -f /etc/resolv.conf
+sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+echo "Waiting for network to come back up..."
+for i in $(seq 1 30); do
+    if ping -c 1 -W 2 archlinux.org >/dev/null 2>&1; then
+        echo "Network is up"
+        break
+    fi
+    if [[ $i -eq 30 ]]; then
+        echo "Network did not come back. Reconnect WiFi manually:"
+        echo "  iwctl station wlan0 connect <network>"
+        echo "Then re-run this script."
+        exit 1
+    fi
+    sleep 1
+done
 
 # ─── Install yay ─────────────────────────────────────────────────────
 
