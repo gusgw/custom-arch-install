@@ -116,10 +116,10 @@ cat > "${AIROOTFS}/etc/motd" <<'MOTD'
   │  Make the scripts executable:                                │
   │    chmod +x /root/setup/stage*.sh                            │
   │                                                              │
-  │  Fresh install (blank disk):                                  │
+  │  Fresh install (blank disk) — run stage0 first:               │
   │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage0.sh     │
   │                                                              │
-  │  Reinstall (existing LUKS+LVM, preserve /home):              │
+  │  Then stage1 (always — or start here for reinstall):         │
   │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage1.sh     │
   │                                                              │
   │  Then place the LUKS keyfile:                                │

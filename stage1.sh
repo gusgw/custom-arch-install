@@ -79,9 +79,13 @@ step "Format EFI partition" \
     "mkfs.fat -F32 ${EFI_PART}"
 mkfs.fat -F32 "$EFI_PART"
 
-step "Open existing LUKS container (enter passphrase)" \
-    "cryptsetup open ${LUKS_PART} ${VG_NAME}"
-cryptsetup open "$LUKS_PART" "$VG_NAME"
+if cryptsetup status "$VG_NAME" >/dev/null 2>&1; then
+    log_message "LUKS already open (from stage0)"
+else
+    step "Open existing LUKS container (enter passphrase)" \
+        "cryptsetup open ${LUKS_PART} ${VG_NAME}"
+    cryptsetup open "$LUKS_PART" "$VG_NAME"
+fi
 
 step "Reformat swap" \
     "mkswap /dev/${VG_NAME}/swap"
