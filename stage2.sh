@@ -305,9 +305,6 @@ echo "       sudo zpool import <poolname>"
 echo ""
 echo "  5. Clone and set up dotfiles"
 echo ""
-echo "  6. Set up network configs from dotfiles"
-echo "       (iwd, systemd-networkd, systemd-resolved)"
-echo ""
 echo "Reboot now with: umount -R /mnt && reboot"
 
 cleanup 0

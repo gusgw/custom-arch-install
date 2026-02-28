@@ -97,7 +97,6 @@ Stage 3 will:
 
 - Import or create ZFS pool: `sudo modprobe zfs && sudo zpool import <poolname>`
 - Clone your dotfiles and symlink configs
-- Set up network configs (iwd, systemd-networkd, systemd-resolved)
 
 ## Files
 
