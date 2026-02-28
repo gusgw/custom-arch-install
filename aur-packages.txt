@@ -1,7 +1,35 @@
 # aur-packages.txt — AUR packages to install after first boot
 #
 # Installed via yay in stage3.sh
+# Based on clovis AUR package list
 #
+# ZFS
 zfs-dkms-staging-git
 zfs-utils-staging-git
 sanoid
+
+# Fonts
+powerline-fonts-git
+
+# Desktop / theming
+adwaita-dark
+adwaita-qt5-git
+adwaita-qt6-git
+nordic-theme
+
+# Applications
+blueberry
+google-chrome
+jetbrains-toolbox
+pinentry-rofi
+sc-im
+wlprop
+zoom
+zotero-bin
+
+# Printing
+epson-inkjet-printer-escpr
+epsonscan2
+
+# Python
+python311
