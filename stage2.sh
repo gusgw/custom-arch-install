@@ -238,8 +238,9 @@ rm -f sublimehq-pub.gpg
 echo -e '\n[sublime-text]\nServer = https://download.sublimetext.com/arch/stable/x86_64' >> /etc/pacman.conf
 CHROOT_SUBLIME
 
-step "Configure NVIDIA and CPU governor" \
+step "Configure NVIDIA, Intel GPU for sway, and CPU governor" \
     "nvidia: NVreg_DynamicPowerManagement=0x00 → /etc/modprobe.d/nvidia.conf" \
+    "sway: WLR_DRM_DEVICES=Intel only → /etc/profile.d/sway-intel-gpu.sh" \
     "cpu: scaling_governor=performance → /etc/tmpfiles.d/cpu-governor.conf"
 arch-chroot /mnt /bin/bash <<'CHROOT_HW'
 set -euo pipefail
@@ -247,6 +248,12 @@ mkdir -p /etc/modprobe.d
 cat > /etc/modprobe.d/nvidia.conf <<'NVIDIA'
 options nvidia NVreg_DynamicPowerManagement=0x00
 NVIDIA
+
+mkdir -p /etc/profile.d
+cat > /etc/profile.d/sway-intel-gpu.sh <<'SWAY'
+# Use Intel integrated GPU for sway — NVIDIA is for compute only (prime-run)
+export WLR_DRM_DEVICES=/dev/dri/by-path/pci-0000:00:02.0-card
+SWAY
 
 mkdir -p /etc/tmpfiles.d
 cat > /etc/tmpfiles.d/cpu-governor.conf <<'CPUGOV'

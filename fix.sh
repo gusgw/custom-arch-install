@@ -144,6 +144,14 @@ else
     echo "Sublime Text repository already configured"
 fi
 
+# ─── Configure sway to use Intel GPU only ─────────────────────────────
+
+echo "Configuring sway to use Intel GPU (NVIDIA for compute only)..."
+sudo tee /etc/profile.d/sway-intel-gpu.sh > /dev/null <<'EOF'
+# Use Intel integrated GPU for sway — NVIDIA is for compute only (prime-run)
+export WLR_DRM_DEVICES=/dev/dri/by-path/pci-0000:00:02.0-card
+EOF
+
 # ─── Install yay ─────────────────────────────────────────────────────
 
 if ! command -v yay &>/dev/null; then
