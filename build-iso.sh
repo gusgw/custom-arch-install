@@ -91,6 +91,7 @@ log_message "Cloning setup repo into ISO airootfs"
 AIROOTFS="${WORK_DIR}/airootfs"
 mkdir -p "${AIROOTFS}/root"
 git clone "$SETUP_REPO" "${AIROOTFS}/root/setup/"
+chmod +x "${AIROOTFS}/root/setup/stage0.sh"
 chmod +x "${AIROOTFS}/root/setup/stage1.sh"
 chmod +x "${AIROOTFS}/root/setup/stage2.sh"
 chmod +x "${AIROOTFS}/root/setup/build-iso.sh"
@@ -113,9 +114,12 @@ cat > "${AIROOTFS}/etc/motd" <<'MOTD'
   │  Establish a network connection first (e.g. iwctl).           │
   │                                                              │
   │  Make the scripts executable:                                │
-  │    chmod +x /root/setup/stage1.sh /root/setup/stage2.sh      │
+  │    chmod +x /root/setup/stage*.sh                            │
   │                                                              │
-  │  Stage 1 — format, mount, pacstrap:                          │
+  │  Fresh install (blank disk):                                  │
+  │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage0.sh     │
+  │                                                              │
+  │  Reinstall (existing LUKS+LVM, preserve /home):              │
   │    HOSTNAME=<host> USERNAME=<user> /root/setup/stage1.sh     │
   │                                                              │
   │  Then place the LUKS keyfile:                                │
