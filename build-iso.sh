@@ -110,7 +110,9 @@ cat > "${AIROOTFS}/etc/motd" <<'MOTD'
   ┌──────────────────────────────────────────────────────────────┐
   │  Arch Linux Installer                                        │
   │                                                              │
-  │  First, make the scripts executable:                         │
+  │  Establish a network connection first (e.g. iwctl).           │
+  │                                                              │
+  │  Make the scripts executable:                                │
   │    chmod +x /root/setup/stage1.sh /root/setup/stage2.sh      │
   │                                                              │
   │  Stage 1 — format, mount, pacstrap:                          │

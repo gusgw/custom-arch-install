@@ -37,6 +37,12 @@ phase 1 "Validate environment"
 
 validate_live_usb
 
+log_message "Checking network connectivity"
+if ! ping -c 1 -W 5 archlinux.org >/dev/null 2>&1; then
+    log_message "No network connection — connect with iwctl or ethernet first"
+    cleanup "$MISSING_INPUT"
+fi
+
 for cmd in cryptsetup mkfs.fat pacstrap genfstab arch-chroot fdisk blkid curl; do
     check_dependency "$cmd"
 done
