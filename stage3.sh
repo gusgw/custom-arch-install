@@ -116,6 +116,28 @@ yay -S --needed $AUR_PKGS
 
 phase 12 "Enable ZFS and AUR-dependent services"
 
+step "Install custom zfs-load-key.service (package version is masked)" \
+    "Write /etc/systemd/system/zfs-load-key.service" \
+    "systemctl daemon-reload"
+sudo tee /etc/systemd/system/zfs-load-key.service > /dev/null <<'EOF'
+[Unit]
+Description=Load encryption keys
+DefaultDependencies=no
+After=zfs-import.target
+Before=zfs-mount.service
+Requires=zfs-import.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/zfs load-key -a
+StandardInput=tty-force
+
+[Install]
+WantedBy=zfs-mount.service
+EOF
+sudo systemctl daemon-reload
+
 step "Enable ZFS and AUR-dependent system services from services.txt" \
     "sudo systemctl enable <commented services from services.txt>"
 # Commented lines in services.txt that look like systemd units are

@@ -165,15 +165,35 @@ sudo modprobe zfs
 
 # ─── Enable ZFS services ─────────────────────────────────────────────
 
+echo "Installing custom zfs-load-key.service (package version is masked)..."
+sudo tee /etc/systemd/system/zfs-load-key.service > /dev/null <<'EOF'
+[Unit]
+Description=Load encryption keys
+DefaultDependencies=no
+After=zfs-import.target
+Before=zfs-mount.service
+Requires=zfs-import.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/zfs load-key -a
+StandardInput=tty-force
+
+[Install]
+WantedBy=zfs-mount.service
+EOF
+sudo systemctl daemon-reload
+
 echo "Enabling ZFS services..."
 sudo systemctl enable \
     zfs-import-scan.service \
     zfs-import.target \
     zfs-load-key.service \
     zfs-mount.service \
-    zfs.target \
-    zfs-volumes.target \
     zfs-volume-wait.service \
+    zfs-volumes.target \
+    zfs.target \
     zfs-zed.service \
     sanoid.timer
 

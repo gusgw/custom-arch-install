@@ -2,6 +2,6 @@
 #
 # Installed via yay in stage3.sh
 #
-zfs-dkms
-zfs-utils
+zfs-dkms-staging-git
+zfs-utils-staging-git
 sanoid

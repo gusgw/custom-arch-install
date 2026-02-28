@@ -26,13 +26,14 @@ systemd-timesyncd.service
 systemd-userdbd.socket
 ufw.service
 
-# AUR package services (enable after installing zfs-dkms-staging-git, sanoid)
+# AUR package services (enable after installing zfs-dkms, zfs-utils, sanoid)
+# Matches clovis configuration
 # sanoid.timer
 # zfs-import-scan.service
 # zfs-import.target
 # zfs-load-key.service
 # zfs-mount.service
-# zfs.target
-# zfs-volumes.target
 # zfs-volume-wait.service
+# zfs-volumes.target
+# zfs.target
 # zfs-zed.service
