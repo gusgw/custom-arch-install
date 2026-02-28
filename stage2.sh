@@ -138,14 +138,14 @@ CHROOT_GRUB
 step "Create user ${INSTALL_USER} and configure sudo" \
     "groupadd -g 1000 ${INSTALL_USER}" \
     "useradd -u 1000 -g ${INSTALL_USER} -G wheel,audio,network -s /bin/zsh -m ${INSTALL_USER}" \
-    "Uncomment %wheel ALL=(ALL:ALL) ALL in /etc/sudoers"
+    "Uncomment %wheel ALL=(ALL:ALL) NOPASSWD: ALL in /etc/sudoers"
 arch-chroot /mnt /bin/bash <<'CHROOT_USER'
 set -euo pipefail
 INSTALL_USER=$(cat /root/username.txt)
 rm -f /root/username.txt
 groupadd -g 1000 "$INSTALL_USER"
 useradd -u 1000 -g "$INSTALL_USER" -G wheel,audio,network -s /bin/zsh -m "$INSTALL_USER"
-sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
 CHROOT_USER
 
 step "Configure NVIDIA and CPU governor" \
@@ -202,31 +202,20 @@ echo ""
 echo "  1. Remove the USB drive and boot into GRUB → Arch Linux"
 echo "  2. Login as ${INSTALL_USER}"
 echo ""
-echo "  3. Clone and set up dotfiles"
+echo "  3. Clone setup repo and run stage3:"
+echo "       git clone <repo-url> ~/setup"
+echo "       cd ~/setup && ./stage3.sh"
 echo ""
-echo "  4. Enable user services:"
-while IFS= read -r svc; do
-    [[ -z "$svc" || "$svc" == \#* ]] && continue
-    echo "       systemctl --user enable $svc"
-done < "${SCRIPT_DIR}/user-services.txt"
+echo "     Stage 3 installs yay, AUR packages (ZFS, sanoid),"
+echo "     enables ZFS services, and enables user services."
 echo ""
-echo "  5. Import ZFS pool:"
+echo "  4. Import ZFS pool:"
+echo "       sudo modprobe zfs"
 echo "       sudo zpool import <poolname>"
 echo ""
-echo "  6. Install AUR helper:"
-echo "       git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin"
-echo "       cd /tmp/yay-bin && makepkg -si"
+echo "  5. Clone and set up dotfiles"
 echo ""
-echo "  7. Install AUR packages:"
-echo "       yay -S zfs-dkms-staging-git sanoid"
-echo ""
-echo "  8. Enable ZFS services:"
-echo "       sudo systemctl enable zfs-import-scan.service zfs-import.target \\"
-echo "         zfs-load-key.service zfs-mount.service zfs.target \\"
-echo "         zfs-volumes.target zfs-volume-wait.service zfs-zed.service \\"
-echo "         sanoid.timer"
-echo ""
-echo "  9. Set up network configs from dotfiles"
+echo "  6. Set up network configs from dotfiles"
 echo "       (iwd, systemd-networkd, systemd-resolved)"
 echo ""
 echo "Reboot now with: umount -R /mnt && reboot"
