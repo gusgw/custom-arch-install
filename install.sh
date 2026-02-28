@@ -32,6 +32,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 set_stamp
 trap handle_signal SIGINT SIGTERM
+trap 'rc=$?; [[ $rc -ne 0 ]] && cleanup_mounts "$rc"; exit $rc' EXIT
 
 # ─── Configuration ─────────────────────────────────────────────────────
 
