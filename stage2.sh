@@ -148,6 +148,84 @@ useradd -u 1000 -g "$INSTALL_USER" -G wheel,audio,network -s /bin/zsh -m "$INSTA
 sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
 CHROOT_USER
 
+step "Configure network (iwd + systemd-networkd + systemd-resolved)" \
+    "/etc/iwd/main.conf — delegate IP config to systemd-networkd" \
+    "/etc/systemd/network/25-wireless.network — DHCP + DNS over TLS" \
+    "/etc/systemd/resolved.conf.d/encrypted-dns.conf — Quad9 encrypted DNS" \
+    "/etc/resolv.conf → stub-resolv.conf symlink"
+arch-chroot /mnt /bin/bash <<'CHROOT_NET'
+set -euo pipefail
+
+mkdir -p /etc/iwd
+cat > /etc/iwd/main.conf <<'IWD'
+[General]
+EnableNetworkConfiguration=false
+EnableIPv6=true
+RoamThreshold=-70
+RoamThreshold5G=-76
+
+[Network]
+NameResolvingService=systemd
+IWD
+
+mkdir -p /etc/systemd/network
+cat > /etc/systemd/network/25-wireless.network <<'NETW'
+[Match]
+Name=wlan0
+
+[Link]
+RequiredForOnline=routable
+
+[Network]
+DHCP=yes
+IPv6AcceptRA=yes
+IPv6PrivacyExtensions=yes
+IgnoreCarrierLoss=3s
+DNS=9.9.9.9#dns.quad9.net
+DNS=149.112.112.112#dns.quad9.net
+DNS=2620:fe::fe#dns.quad9.net
+DNS=2620:fe::9#dns.quad9.net
+DNSOverTLS=yes
+Domains=~.
+
+[DHCPv4]
+RouteMetric=600
+UseDNS=yes
+
+[DHCPv6]
+UseDNS=yes
+
+[IPv6AcceptRA]
+UseDNS=yes
+RouteMetric=600
+NETW
+
+mkdir -p /etc/systemd/resolved.conf.d
+cat > /etc/systemd/resolved.conf.d/encrypted-dns.conf <<'RESOLVED'
+[Resolve]
+DNS=9.9.9.9#dns.quad9.net
+DNS=149.112.112.112#dns.quad9.net
+DNS=2620:fe::fe#dns.quad9.net
+DNS=2620:fe::9#dns.quad9.net
+FallbackDNS=1.1.1.1#cloudflare-dns.com
+FallbackDNS=1.0.0.1#cloudflare-dns.com
+FallbackDNS=2606:4700:4700::1111#cloudflare-dns.com
+FallbackDNS=2606:4700:4700::1001#cloudflare-dns.com
+DNSOverTLS=yes
+DNSSEC=allow-downgrade
+Domains=~.
+Cache=yes
+DNSStubListener=yes
+ReadEtcHosts=yes
+MulticastDNS=no
+LLMNR=no
+DNSStubListenerExtra=[::1]:53
+RESOLVED
+
+rm -f /etc/resolv.conf
+ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+CHROOT_NET
+
 step "Configure NVIDIA and CPU governor" \
     "nvidia: NVreg_DynamicPowerManagement=0x00 → /etc/modprobe.d/nvidia.conf" \
     "cpu: scaling_governor=performance → /etc/tmpfiles.d/cpu-governor.conf"

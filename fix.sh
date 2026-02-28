@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# fix.sh — Fix tobermory after failed stage2 (USERNAME bug, missing ZFS, wrong sudoers)
+# fix.sh — Fix tobermory after failed stage2
 #
+# Fixes: USERNAME bug, missing ZFS, wrong sudoers, missing network config.
 # Run as gusgw on tobermory after first boot.
 # One-time script — delete after use.
 #
@@ -29,6 +30,88 @@ if ! id gusgw &>/dev/null; then
 else
     echo "User gusgw already exists"
 fi
+
+# ─── Configure network (iwd + systemd-networkd + systemd-resolved) ──
+
+echo "Configuring network..."
+
+# iwd: delegate IP config to systemd-networkd
+sudo mkdir -p /etc/iwd
+sudo tee /etc/iwd/main.conf > /dev/null <<'EOF'
+[General]
+EnableNetworkConfiguration=false
+EnableIPv6=true
+RoamThreshold=-70
+RoamThreshold5G=-76
+
+[Network]
+NameResolvingService=systemd
+EOF
+
+# systemd-networkd: DHCP + DNS over TLS on wlan0
+sudo mkdir -p /etc/systemd/network
+sudo tee /etc/systemd/network/25-wireless.network > /dev/null <<'EOF'
+[Match]
+Name=wlan0
+
+[Link]
+RequiredForOnline=routable
+
+[Network]
+DHCP=yes
+IPv6AcceptRA=yes
+IPv6PrivacyExtensions=yes
+IgnoreCarrierLoss=3s
+DNS=9.9.9.9#dns.quad9.net
+DNS=149.112.112.112#dns.quad9.net
+DNS=2620:fe::fe#dns.quad9.net
+DNS=2620:fe::9#dns.quad9.net
+DNSOverTLS=yes
+Domains=~.
+
+[DHCPv4]
+RouteMetric=600
+UseDNS=yes
+
+[DHCPv6]
+UseDNS=yes
+
+[IPv6AcceptRA]
+UseDNS=yes
+RouteMetric=600
+EOF
+
+# systemd-resolved: encrypted DNS with Quad9
+sudo mkdir -p /etc/systemd/resolved.conf.d
+sudo tee /etc/systemd/resolved.conf.d/encrypted-dns.conf > /dev/null <<'EOF'
+[Resolve]
+DNS=9.9.9.9#dns.quad9.net
+DNS=149.112.112.112#dns.quad9.net
+DNS=2620:fe::fe#dns.quad9.net
+DNS=2620:fe::9#dns.quad9.net
+FallbackDNS=1.1.1.1#cloudflare-dns.com
+FallbackDNS=1.0.0.1#cloudflare-dns.com
+FallbackDNS=2606:4700:4700::1111#cloudflare-dns.com
+FallbackDNS=2606:4700:4700::1001#cloudflare-dns.com
+DNSOverTLS=yes
+DNSSEC=allow-downgrade
+Domains=~.
+Cache=yes
+DNSStubListener=yes
+ReadEtcHosts=yes
+MulticastDNS=no
+LLMNR=no
+DNSStubListenerExtra=[::1]:53
+EOF
+
+# resolv.conf symlink
+sudo rm -f /etc/resolv.conf
+sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+echo "Restarting network services..."
+sudo systemctl restart systemd-resolved
+sudo systemctl restart systemd-networkd
+sudo systemctl restart iwd
 
 # ─── Install yay ─────────────────────────────────────────────────────
 
@@ -66,8 +149,9 @@ sudo systemctl enable \
 # ─── Done ─────────────────────────────────────────────────────────────
 
 echo ""
-echo "Done. Now import your ZFS pool:"
-echo "  sudo zpool import <poolname>"
+echo "Done. Now:"
+echo "  1. Reconnect WiFi: iwctl station wlan0 connect <network>"
+echo "  2. Import ZFS pool: sudo zpool import <poolname>"
 echo ""
 echo "Delete this script when finished:"
 echo "  rm fix.sh"
