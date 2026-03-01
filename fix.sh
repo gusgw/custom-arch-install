@@ -179,7 +179,7 @@ for pkg in zfs-dkms zfs-utils zfs-dkms-debug zfs-utils-debug; do
 done
 
 echo "Installing ZFS (staging) and sanoid..."
-yay -S --needed zfs-dkms-staging-git zfs-utils-staging-git sanoid
+yay -S --needed --overwrite '*' zfs-dkms-staging-git zfs-utils-staging-git sanoid
 
 echo "Loading ZFS module..."
 sudo modprobe zfs

@@ -106,9 +106,9 @@ phase 11 "Install AUR packages"
 AUR_PKGS=$(grep -v '^#' "${SCRIPT_DIR}/aur-packages.txt" | grep -v '^$' | tr '\n' ' ')
 
 step "Install AUR packages" \
-    "yay -S --needed ${AUR_PKGS}"
+    "yay -S --needed --overwrite '*' ${AUR_PKGS}"
 # shellcheck disable=SC2086 — word splitting is intentional, yay needs separate args
-yay -S --needed $AUR_PKGS
+yay -S --needed --overwrite '*' $AUR_PKGS
 
 # ═══════════════════════════════════════════════════════════════════════
 #  Phase 12: Enable ZFS and AUR-dependent services

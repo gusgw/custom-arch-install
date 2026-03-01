@@ -19,6 +19,7 @@ bats
 bats-assert
 bats-support
 bemenu
+bemenu-wayland
 bind
 binutils
 bluez

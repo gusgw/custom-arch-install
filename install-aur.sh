@@ -45,7 +45,8 @@ echo "Installing AUR packages:"
 echo "$AUR_PKGS" | tr ' ' '\n' | sed 's/^/  /'
 echo ""
 
-yay -S --needed $AUR_PKGS
+# shellcheck disable=SC2086
+yay -S --needed --overwrite '*' $AUR_PKGS
 
 echo ""
 echo "Done."
